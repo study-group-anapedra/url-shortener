@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Lambda do projeto URL Shortener - Versao Vazia para Infra
+Description: Lambda do projeto URL Shortener - Versao Java Final
 
 Parameters:
   ProjectName:
@@ -12,7 +12,7 @@ Parameters:
     Default: 512
   LambdaTimeout:
     Type: Number
-    Default: 10
+    Default: 20  # Java precisa de um pouco mais de tempo para o Cold Start
   ArtifactBucket:
     Type: String
   ArtifactKey:
@@ -23,16 +23,15 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-${Environment}-handler"
-      Runtime: python3.9
-      Handler: index.handler
+      Runtime: java17    # Alterado para suportar seu backend Java
+      Handler: com.asantanadev.urlshortener.Handler::handleRequest # Ajuste para o seu path real do Java
       MemorySize: !Ref LambdaMemory
       Timeout: !Ref LambdaTimeout
       Role: 
         Fn::ImportValue: !Sub "${ProjectName}-${Environment}-LambdaExecutionRoleArn"
       Code:
-        ZipFile: |
-          def handler(event, context):
-              return {'statusCode': 200, 'body': 'Lambda Vazia para Infra'}
+        S3Bucket: !Ref ArtifactBucket # Agora ele busca o arquivo de 15MB no S3
+        S3Key: !Ref ArtifactKey
       Environment:
         Variables:
           ENVIRONMENT: !Ref Environment
