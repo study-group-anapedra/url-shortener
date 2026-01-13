@@ -10,19 +10,12 @@ permissions:
   contents: read
 
 env:
-  # Variáveis Gerais
   AWS_REGION: ${{ vars.AWS_REGION }}
   PROJECT_NAME: ${{ vars.PROJECT_NAME }}
   ENVIRONMENT: ${{ vars.ENVIRONMENT }}
-  
-  # Armazenamento e Artefatos
   S3_BUCKET: ${{ vars.ARTIFACT_BUCKET }}
-  
-  # Nomes das Stacks
   STACK_NAME_INFRA: ${{ vars.STACK_NAME_INFRA }}
   STACK_NAME_DNS: ${{ vars.STACK_NAME_DNS }}
-
-  # Configurações de DNS
   DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
   HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
 
@@ -61,7 +54,7 @@ jobs:
             --parameter-overrides \
               ProjectName=${{ env.PROJECT_NAME }} \
               Environment=${{ env.ENVIRONMENT }} \
-              ArtifactsBucket=${{ env.S3_BUCKET }}
+              ArtifactBucket=${{ env.S3_BUCKET }}
 
   deploy-dns:
     name: Deploy Route53 DNS
