@@ -1,25 +1,24 @@
-name: Java CD - Deploy Lambda (URL Shortener)
+name: Deploy Full Stack - URL Shortener
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 env:
   AWS_REGION: us-east-1
 
-  # Projeto
   PROJECT_NAME: url-shortener
   ENVIRONMENT: prod
 
-  # Infra
-  STACK_NAME_LAMBDA: url-shortener-lambda-prod
-
-  # Bucket onde o jar é publicado
   ARTIFACT_BUCKET: url-shortener-artifacts-prod-ana
   ARTIFACT_KEY: lambda/url-shortener.jar
 
+  STACK_NAME_INFRA: url-shortener-infra-prod
+
 jobs:
-  deploy-lambda:
+  deploy:
+    name: Build, Upload Artifact and Deploy Infrastructure
     runs-on: ubuntu-latest
 
     permissions:
@@ -43,27 +42,40 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Build da Lambda
-      - name: Build do projeto (Lambda)
+      # 1) Build do projeto Java
+      - name: Build da Lambda
         run: |
           cd backend/url-shortener
-          mvn -B clean package -DskipTests
+          mvn clean package -DskipTests
 
-      # Upload do JAR para o S3
+      # 2) Upload do JAR para o S3
       - name: Upload do JAR para o S3
         run: |
           aws s3 cp backend/url-shortener/target/url-shortener-1.0.0.jar \
             s3://${{ env.ARTIFACT_BUCKET }}/${{ env.ARTIFACT_KEY }}
 
-      # Atualiza a stack CloudFormation da Lambda
-      - name: Atualizar stack da Lambda
+      # 3) Upload dos templates CloudFormation
+      - name: Upload dos módulos CloudFormation para o S3
+        run: |
+          aws s3 sync infra/templates/modules \
+            s3://${{ env.ARTIFACT_BUCKET }}/modules
+
+      # 4) Package do template master
+      - name: Package do template master
+        run: |
+          aws cloudformation package \
+            --template-file infra/templates/master.yaml \
+            --s3-bucket ${{ env.ARTIFACT_BUCKET }} \
+            --output-template-file packaged-master.yaml
+
+      # 5) Deploy do master stack
+      - name: Deploy do Master Stack
         run: |
           aws cloudformation deploy \
-            --stack-name ${{ env.STACK_NAME_LAMBDA }} \
-            --template-file infra/templates/modules/lambda.yaml \
-            --capabilities CAPABILITY_NAMED_IAM \
+            --template-file packaged-master.yaml \
+            --stack-name ${{ env.STACK_NAME_INFRA }} \
+            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --parameter-overrides \
               ProjectName=${{ env.PROJECT_NAME }} \
               Environment=${{ env.ENVIRONMENT }} \
-              ArtifactBucket=${{ env.ARTIFACT_BUCKET }} \
-              ArtifactKey=${{ env.ARTIFACT_KEY }}
+              ArtifactsBucket=${{ env.ARTIFACT_BUCKET }}
