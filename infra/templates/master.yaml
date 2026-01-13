@@ -10,7 +10,7 @@ Description: >
 Parameters:
   ProjectName:
     Type: String
-    Description: Nome do projeto (ex: url-shortener)
+    Description: "Nome do projeto (ex: url-shortener)"
 
   Environment:
     Type: String

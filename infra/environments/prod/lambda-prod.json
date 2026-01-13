@@ -17,7 +17,7 @@
   },
   {
     "ParameterKey": "ArtifactBucket",
-    "ParameterValue": "url-shortener-artifacts-prod-ana"
+    "ParameterValue": "url-shortener-artifacts-ana"
   },
   {
     "ParameterKey": "ArtifactKey",
