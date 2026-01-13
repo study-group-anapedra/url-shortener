@@ -40,22 +40,22 @@ jobs:
       - name: Configurar credenciais AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       # 1) Build da Lambda
       - name: Build da Lambda
         run: |
           cd backend/url-shortener
-          mvn clean package -DskipTests
+          mvn clean package
 
-      # 2) Upload do JAR CORRETO (shaded)
+      # 2) Upload do JAR correto (o Shade substitui o original e mantém o mesmo nome)
       - name: Upload do JAR para o S3
         run: |
-          aws s3 cp backend/url-shortener/target/url-shortener-1.0.0-shaded.jar \
+          aws s3 cp backend/url-shortener/target/url-shortener-1.0.0.jar \
             s3://${{ env.ARTIFACT_BUCKET }}/${{ env.ARTIFACT_KEY }}
 
-      # 3) Upload dos templates CloudFormation
+      # 3) Upload dos módulos CloudFormation
       - name: Upload dos módulos CloudFormation para o S3
         run: |
           aws s3 sync infra/templates/modules \
