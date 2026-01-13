@@ -49,10 +49,10 @@ jobs:
           cd backend/url-shortener
           mvn clean package -DskipTests
 
-      # 2) Upload do JAR para o S3
+      # 2) Upload do JAR CORRETO (shaded)
       - name: Upload do JAR para o S3
         run: |
-          aws s3 cp backend/url-shortener/target/url-shortener-1.0.0.jar \
+          aws s3 cp backend/url-shortener/target/url-shortener-1.0.0-shaded.jar \
             s3://${{ env.ARTIFACT_BUCKET }}/${{ env.ARTIFACT_KEY }}
 
       # 3) Upload dos templates CloudFormation
@@ -76,8 +76,8 @@ jobs:
             --template-file packaged-master.yaml \
             --stack-name ${{ env.STACK_NAME_INFRA }} \
             --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
             --parameter-overrides \
               ProjectName=${{ env.PROJECT_NAME }} \
               Environment=${{ env.ENVIRONMENT }} \
               ArtifactsBucket=${{ env.ARTIFACT_BUCKET }}
-
