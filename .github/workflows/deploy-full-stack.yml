@@ -7,10 +7,13 @@ on:
 
 env:
   AWS_REGION: us-east-1
+
   PROJECT_NAME: url-shortener
   ENVIRONMENT: prod
+
   ARTIFACT_BUCKET: url-shortener-artifacts-prod-ana
   ARTIFACT_KEY: lambda/url-shortener.jar
+
   STACK_NAME_INFRA: url-shortener-infra-prod
 
 jobs:
@@ -39,7 +42,6 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-          audience: sts.amazonaws.com
 
       # 1) Build da Lambda
       - name: Build da Lambda
@@ -47,10 +49,10 @@ jobs:
           cd backend/url-shortener
           mvn clean package -DskipTests
 
-      # 2) Upload do JAR CORRETO (shaded)
+      # 2) Upload do JAR (o Maven Shade substitui o original, então o nome é este)
       - name: Upload do JAR para o S3
         run: |
-          aws s3 cp backend/url-shortener/target/url-shortener-1.0.0-shaded.jar \
+          aws s3 cp backend/url-shortener/target/url-shortener-1.0.0.jar \
             s3://${{ env.ARTIFACT_BUCKET }}/${{ env.ARTIFACT_KEY }}
 
       # 3) Upload dos templates CloudFormation
@@ -79,4 +81,3 @@ jobs:
               ProjectName=${{ env.PROJECT_NAME }} \
               Environment=${{ env.ENVIRONMENT }} \
               ArtifactsBucket=${{ env.ARTIFACT_BUCKET }}
-
