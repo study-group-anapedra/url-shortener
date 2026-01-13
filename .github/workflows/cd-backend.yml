@@ -1,0 +1,69 @@
+name: Java CD - Deploy Lambda (URL Shortener)
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: us-east-1
+
+  # Projeto
+  PROJECT_NAME: url-shortener
+  ENVIRONMENT: prod
+
+  # Infra
+  STACK_NAME_LAMBDA: url-shortener-lambda-prod
+
+  # Bucket onde o jar é publicado
+  ARTIFACT_BUCKET: url-shortener-artifacts-prod-ana
+  ARTIFACT_KEY: lambda/url-shortener.jar
+
+jobs:
+  deploy-lambda:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Configurar credenciais AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Build da Lambda
+      - name: Build do projeto (Lambda)
+        run: |
+          cd backend/url-shortener
+          mvn -B clean package -DskipTests
+
+      # Upload do JAR para o S3
+      - name: Upload do JAR para o S3
+        run: |
+          aws s3 cp backend/url-shortener/target/url-shortener-1.0.0.jar \
+            s3://${{ env.ARTIFACT_BUCKET }}/${{ env.ARTIFACT_KEY }}
+
+      # Atualiza a stack CloudFormation da Lambda
+      - name: Atualizar stack da Lambda
+        run: |
+          aws cloudformation deploy \
+            --stack-name ${{ env.STACK_NAME_LAMBDA }} \
+            --template-file infra/templates/modules/lambda.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              ProjectName=${{ env.PROJECT_NAME }} \
+              Environment=${{ env.ENVIRONMENT }} \
+              ArtifactBucket=${{ env.ARTIFACT_BUCKET }} \
+              ArtifactKey=${{ env.ARTIFACT_KEY }}

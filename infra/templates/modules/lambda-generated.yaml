@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda do projeto URL Shortener com permissão para Tabela e GSI
+Parameters:
+  ProjectName:
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues:
+    - dev
+    - prod
+  LambdaMemory:
+    Type: Number
+    Default: 512
+  LambdaTimeout:
+    Type: Number
+    Default: 10
+  ArtifactBucket:
+    Type: String
+  ArtifactKey:
+    Type: String
+Resources:
+  UrlShortenerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ProjectName}-${Environment}-handler
+      Runtime: java17
+      Handler: org.anasantana.handler.UrlShortenerHandler::handleRequest
+      MemorySize:
+        Ref: LambdaMemory
+      Timeout:
+        Ref: LambdaTimeout
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: ${ProjectName}-${Environment}-LambdaExecutionRoleArn
+      Code:
+        S3Bucket:
+          Ref: ArtifactBucket
+        S3Key:
+          Ref: ArtifactKey
+      Environment:
+        Variables:
+          ENVIRONMENT:
+            Ref: Environment
+          TABLE_NAME:
+            Fn::ImportValue:
+              Fn::Sub: ${ProjectName}-${Environment}-DynamoTable
+      Tags:
+      - Key: project
+        Value:
+          Ref: ProjectName
+      - Key: environment
+        Value:
+          Ref: Environment
+  LambdaDynamoPermission:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName:
+        Fn::Sub: ${ProjectName}-${Environment}-dynamo-policy
+      Roles:
+      - Fn::ImportValue:
+          Fn::Sub: ${ProjectName}-${Environment}-LambdaExecutionRoleName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+          Resource:
+          - Fn::ImportValue:
+              Fn::Sub: ${ProjectName}-${Environment}-DynamoTableArn
+          - Fn::Sub:
+            - ${TableArn}/index/originalUrl-index
+            - TableArn:
+                Fn::ImportValue:
+                  Fn::Sub: ${ProjectName}-${Environment}-DynamoTableArn
+Outputs:
+  LambdaArn:
+    Description: ARN da Lambda
+    Value:
+      Fn::GetAtt:
+      - UrlShortenerLambda
+      - Arn
+    Export:
+      Name:
+        Fn::Sub: ${ProjectName}-${Environment}-LambdaArn

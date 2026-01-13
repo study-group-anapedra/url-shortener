@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Tabela DynamoDB com GSI para o projeto URL Shortener
+
+Parameters:
+  ProjectName:
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues: [dev, prod]
+
+Resources:
+  UrlShortenerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-${Environment}-urls"
+      BillingMode: PAY_PER_REQUEST
+
+      AttributeDefinitions:
+        - AttributeName: shortCode
+          AttributeType: S
+        - AttributeName: originalUrl
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: shortCode
+          KeyType: HASH
+
+      GlobalSecondaryIndexes:
+        - IndexName: originalUrl-index
+          KeySchema:
+            - AttributeName: originalUrl
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: environment
+          Value: !Ref Environment
+
+Outputs:
+  TableName:
+    Value: !Ref UrlShortenerTable
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-DynamoTable"
+
+  TableArn:
+    Value: !GetAtt UrlShortenerTable.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-DynamoTableArn"

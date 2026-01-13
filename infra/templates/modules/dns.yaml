@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  DNS do projeto URL Shortener.
+  Cria o registro no Route53 apontando para o domínio real do API Gateway.
+
+Parameters:
+  HostedZoneId:
+    Type: String
+    Description: "ID da Hosted Zone do domínio"
+
+  DomainName:
+    Type: String
+    Description: "Nome do domínio (ex: api.asantanadev.com)"
+
+  ProjectName:
+    Type: String
+
+  Environment:
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+
+Resources:
+  ApiCustomDomainRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub "${DomainName}."
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::ImportValue: !Sub "${ProjectName}-${Environment}-ApiGatewayDomainName"
+        HostedZoneId:
+          Fn::ImportValue: !Sub "${ProjectName}-${Environment}-ApiGatewayHostedZoneId"
+        EvaluateTargetHealth: false
+
+Outputs:
+  DomainURL:
+    Description: "URL final do projeto"
+    Value: !Sub "https://${DomainName}"
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-DomainURL"

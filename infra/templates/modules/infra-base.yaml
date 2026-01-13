@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Infra base compartilhada para o projeto URL Shortener
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: url-shortener
+  Environment:
+    Type: String
+    AllowedValues: [dev, prod]
+  LogRetentionInDays:
+    Type: Number
+    Default: 1
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-${Environment}-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-${Environment}-handler"
+      RetentionInDays: !Ref LogRetentionInDays
+
+Outputs:
+  LambdaExecutionRoleArn:
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-LambdaExecutionRoleArn"
+
+  # ADICIONE ESTE BLOCO ABAIXO:
+  LambdaExecutionRoleName:
+    Value: !Ref LambdaExecutionRole
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-LambdaExecutionRoleName"
+
+  LambdaLogGroupName:
+    Value: !Ref LambdaLogGroup
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-LambdaLogGroupName"

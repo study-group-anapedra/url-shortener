@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  API Gateway HTTP para o projeto URL Shortener.
+  Integra com a Lambda via AWS_PROXY usando Payload 1.0.
+  Com domínio customizado api.asantanadev.com e mapeamento no root.
+
+Parameters:
+  ProjectName:
+    Type: String
+
+  Environment:
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+
+Resources:
+
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${ProjectName}-${Environment}-api"
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowMethods:
+          - POST
+          - GET
+          - OPTIONS
+        AllowOrigins:
+          - "*"
+
+  LambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri:
+        Fn::ImportValue: !Sub "${ProjectName}-${Environment}-LambdaArn"
+      PayloadFormatVersion: '1.0'
+
+  RedirectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /{shortCode}"
+      Target: !Sub "integrations/${LambdaIntegration}"
+
+  PostUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /url"
+      Target: !Sub "integrations/${LambdaIntegration}"
+
+  GetUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /url/{shortCode}"
+      Target: !Sub "integrations/${LambdaIntegration}"
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: !Ref Environment
+      AutoDeploy: true
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::ImportValue: !Sub "${ProjectName}-${Environment}-LambdaArn"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/*"
+        - { ApiId: !Ref HttpApi }
+
+  # =====================================================
+  # DOMÍNIO CUSTOMIZADO
+  # =====================================================
+
+  CustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: api.asantanadev.com
+      DomainNameConfigurations:
+        - CertificateArn: arn:aws:acm:us-east-1:365646127398:certificate/63e80d1b-c0cc-402b-a280-409296304096
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+
+  # =====================================================
+  # MAPEAMENTO DA API NO ROOT DO DOMÍNIO
+  # =====================================================
+
+  ApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      ApiId: !Ref HttpApi
+      DomainName: !Ref CustomDomain
+      Stage: !Ref Environment
+      ApiMappingKey: ""
+
+Outputs:
+  ApiEndpoint:
+    Description: URL base da API (domínio AWS)
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+
+  CustomDomainEndpoint:
+    Description: URL base da API com domínio próprio
+    Value: "https://api.asantanadev.com"
+
+  # ===========================
+  # EXPORTS PARA O DNS
+  # ===========================
+
+  ApiGatewayDomainName:
+    Description: Domain name real do API Gateway para alias no Route53
+    Value: !GetAtt CustomDomain.RegionalDomainName
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-ApiGatewayDomainName"
+
+  ApiGatewayHostedZoneId:
+    Description: HostedZoneId real do API Gateway para alias no Route53
+    Value: !GetAtt CustomDomain.RegionalHostedZoneId
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-ApiGatewayHostedZoneId"

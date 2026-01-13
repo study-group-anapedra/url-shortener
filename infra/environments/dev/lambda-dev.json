@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "url-shortener"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "LambdaMemory",
+    "ParameterValue": "512"
+  },
+  {
+    "ParameterKey": "LambdaTimeout",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "ArtifactBucket",
+    "ParameterValue": "url-shortener-artifacts-ana"
+  },
+  {
+    "ParameterKey": "ArtifactKey",
+    "ParameterValue": "lambda/url-shortener.jar"
+  }
+]

@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Master Stack - URL Shortener
+
+Parameters:
+  ProjectName:
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues: [dev, prod]
+  ArtifactsBucket:
+    Type: String
+
+Resources:
+  InfraBaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ArtifactsBucket}/modules/infra-base.yaml"
+      Parameters:
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: InfraBaseStack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ArtifactsBucket}/modules/database.yaml"
+      Parameters:
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: DatabaseStack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ArtifactsBucket}/modules/lambda.yaml"
+      Parameters:
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+        ArtifactBucket: !Ref ArtifactsBucket
+        ArtifactKey: "lambda/url-shortener.jar"
+
+  ApiStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: LambdaStack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${ArtifactsBucket}/modules/api.yaml"
+      Parameters:
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+
+Outputs:
+  ApiGatewayDomainName:
+    Value: !GetAtt ApiStack.Outputs.ApiGatewayDomainName
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiGatewayDomainName"
+
+  ApiGatewayHostedZoneId:
+    Value: !GetAtt ApiStack.Outputs.ApiGatewayHostedZoneId
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiGatewayHostedZoneId"
