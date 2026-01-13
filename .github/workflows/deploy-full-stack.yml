@@ -11,11 +11,16 @@ env:
   PROJECT_NAME: url-shortener
   ENVIRONMENT: prod
 
-  ARTIFACT_BUCKET: url-shortener-artifacts-prod-ana
+  # Bucket REAL que existe no S3 (sem -prod-)
+  ARTIFACT_BUCKET: url-shortener-artifacts-ana
   ARTIFACT_KEY: lambda/url-shortener.jar
 
   STACK_NAME_INFRA: url-shortener-infra-prod
   STACK_NAME_DNS: url-shortener-dns-prod
+
+  # Parâmetros do DNS
+  DOMAIN_NAME: api.asantanadev.com
+  HOSTED_ZONE_ID: Z0620408R15AZPT367P2
 
 jobs:
   deploy-infra:
@@ -50,7 +55,7 @@ jobs:
           cd backend/url-shortener
           mvn clean package -DskipTests
 
-      # 2) Upload do JAR
+      # 2) Upload do JAR para o S3
       - name: Upload do JAR para o S3
         run: |
           aws s3 cp backend/url-shortener/target/url-shortener-1.0.0.jar \
@@ -110,5 +115,6 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               ProjectName=${{ env.PROJECT_NAME }} \
-              Environment=${{ env.ENVIRONMENT }}
-
+              Environment=${{ env.ENVIRONMENT }} \
+              DomainName=${{ env.DOMAIN_NAME }} \
+              HostedZoneId=${{ env.HOSTED_ZONE_ID }}
