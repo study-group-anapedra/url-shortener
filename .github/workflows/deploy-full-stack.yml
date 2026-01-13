@@ -15,9 +15,10 @@ env:
   ARTIFACT_KEY: lambda/url-shortener.jar
 
   STACK_NAME_INFRA: url-shortener-infra-prod
+  STACK_NAME_DNS: url-shortener-dns-prod
 
 jobs:
-  deploy:
+  deploy-infra:
     name: Build, Upload Artifact and Deploy Infrastructure
     runs-on: ubuntu-latest
 
@@ -49,7 +50,7 @@ jobs:
           cd backend/url-shortener
           mvn clean package -DskipTests
 
-      # 2) Upload do JAR (o Maven Shade substitui o original, então o nome é este)
+      # 2) Upload do JAR
       - name: Upload do JAR para o S3
         run: |
           aws s3 cp backend/url-shortener/target/url-shortener-1.0.0.jar \
@@ -69,7 +70,7 @@ jobs:
             --s3-bucket ${{ env.ARTIFACT_BUCKET }} \
             --output-template-file packaged-master.yaml
 
-      # 5) Deploy do master stack
+      # 5) Deploy do master stack (SEM DNS)
       - name: Deploy do Master Stack
         run: |
           aws cloudformation deploy \
@@ -81,3 +82,33 @@ jobs:
               ProjectName=${{ env.PROJECT_NAME }} \
               Environment=${{ env.ENVIRONMENT }} \
               ArtifactsBucket=${{ env.ARTIFACT_BUCKET }}
+
+  deploy-dns:
+    name: Deploy DNS (Route53)
+    runs-on: ubuntu-latest
+    needs: deploy-infra
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy DNS Stack
+        run: |
+          aws cloudformation deploy \
+            --template-file infra/templates/modules/dns.yaml \
+            --stack-name ${{ env.STACK_NAME_DNS }} \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              ProjectName=${{ env.PROJECT_NAME }} \
+              Environment=${{ env.ENVIRONMENT }}
+
