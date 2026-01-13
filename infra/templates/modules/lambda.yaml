@@ -12,7 +12,7 @@ Parameters:
     Default: 512
   LambdaTimeout:
     Type: Number
-    Default: 20  # Java precisa de um pouco mais de tempo para o Cold Start
+    Default: 30  # Aumentado para 30s para evitar timeout no Cold Start do Java
   ArtifactBucket:
     Type: String
   ArtifactKey:
@@ -23,14 +23,15 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-${Environment}-handler"
-      Runtime: java17    # Alterado para suportar seu backend Java
-      Handler: com.asantanadev.urlshortener.Handler::handleRequest # Ajuste para o seu path real do Java
+      Runtime: java17 
+      # CORREÇÃO: O caminho exato baseado no seu arquivo Java (package + classe::metodo)
+      Handler: org.anasantana.handler.UrlShortenerHandler::handleRequest
       MemorySize: !Ref LambdaMemory
       Timeout: !Ref LambdaTimeout
       Role: 
         Fn::ImportValue: !Sub "${ProjectName}-${Environment}-LambdaExecutionRoleArn"
       Code:
-        S3Bucket: !Ref ArtifactBucket # Agora ele busca o arquivo de 15MB no S3
+        S3Bucket: !Ref ArtifactBucket 
         S3Key: !Ref ArtifactKey
       Environment:
         Variables:
@@ -58,10 +59,11 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:UpdateItem
               - dynamodb:Query
+              - dynamodb:Scan
             Resource: 
               - Fn::ImportValue: !Sub "${ProjectName}-${Environment}-DynamoTableArn"
               - !Sub 
-                - "${TableArn}/index/originalUrl-index"
+                - "${TableArn}/index/*" # Permissão para todos os índices da tabela
                 - TableArn: !ImportValue 
                     Fn::Sub: "${ProjectName}-${Environment}-DynamoTableArn"
 
