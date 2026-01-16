@@ -10,10 +10,7 @@ import org.anasantana.annotation.utils.orm.EntityManagerSimples;
 import org.anasantana.dto.UrlShortenerDTO;
 import org.anasantana.repository.UrlShortenerRepository;
 import org.anasantana.service.UrlShortenerService;
-import org.anasantana.service.exception.AbusoDeRequisicaoException;
-import org.anasantana.service.exception.InfrastructureException;
-import org.anasantana.service.exception.UrlInvalidaException;
-import org.anasantana.service.exception.UrlNaoEncontradaException;
+import org.anasantana.service.exception.*;
 
 import java.util.Map;
 
@@ -42,7 +39,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
             }
             return response(404, "{\"error\":\"Endpoint não encontrado\"}");
 
-        } catch (UrlInvalidaException e) {
+        } catch (BusinessException e) {
             return response(400, "{\"error\":\"" + e.getMessage() + "\"}");
         } catch (AbusoDeRequisicaoException e) {
             return response(429, "{\"error\":\"Muitas requisições. Tente mais tarde.\"}");

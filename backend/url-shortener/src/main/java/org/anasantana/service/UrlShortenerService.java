@@ -22,7 +22,7 @@ public class UrlShortenerService {
         
         // 1. Validação de segurança (evita NullPointer antes de chegar no banco)
         if (dto.getOriginalUrl() == null || dto.getOriginalUrl().isBlank()) {
-            throw new UrlInvalidaException("A URL original não pode estar vazia.");
+            throw new BusinessException("A URL original não pode estar vazia.");
         }
 
         // 2. Validação de Regra de Negócio (Rate Limit e Formato da URL)
