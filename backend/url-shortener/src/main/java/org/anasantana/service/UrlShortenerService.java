@@ -49,12 +49,12 @@ public class UrlShortenerService {
 
     private void validarUrl(String originalUrl) {
         if (originalUrl == null || originalUrl.isBlank()) {
-            throw new BusinessException("A URL original não pode ser vazia");
+            throw new BusinessException("A URL original não pode ser vazia(service)");
         }
 
-        if (!originalUrl.startsWith("http://") && !originalUrl.startsWith("https://")) {
-            throw new BusinessException("A URL original deve começar com http:// ou https://");
-        }
+        //if (!originalUrl.startsWith("http://") && !originalUrl.startsWith("https://")) {
+        //    throw new BusinessException("Apenas URLs com http ou https são permitidas");
+       // }
     }
 
     private void processarValidacao(UrlShortener entidade, String identificador) {

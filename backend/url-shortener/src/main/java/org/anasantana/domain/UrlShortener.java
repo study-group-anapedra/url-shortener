@@ -13,7 +13,7 @@ public class UrlShortener {
     @Indexed(unique = true)
     private String shortCode;
 
-    //@ValidarURL
+    @ValidarURL(mensagem = "Apenas URLs com http ou https são permitidas(entity)")
     private String originalUrl;
 
     private Instant createdAt;
