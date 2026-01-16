@@ -10,7 +10,9 @@ import org.anasantana.annotation.utils.orm.EntityManagerSimples;
 import org.anasantana.dto.UrlShortenerDTO;
 import org.anasantana.repository.UrlShortenerRepository;
 import org.anasantana.service.UrlShortenerService;
+import org.anasantana.service.exception.BusinessException;
 import org.anasantana.service.exception.InfrastructureException;
+import org.anasantana.service.exception.UrlInvalidaException;
 
 import java.util.Map;
 
@@ -46,17 +48,25 @@ public class UrlShortenerHandler implements RequestHandler<
             }
 
             // 2. REDIRECIONAR (GET /{shortCode})
-            // Agora pensado para funcionar no ROOT do domínio, sem /dev
             if ("GET".equalsIgnoreCase(method) && path != null && !path.equals("/")) {
                 return handleGet(request, context);
             }
 
             return response(404, "{\"error\":\"Endpoint não encontrado\"}");
 
-        } catch (InfrastructureException e) {
+        }
+        // ======= REGRAS DE NEGÓCIO → HTTP 400 =======
+        catch (BusinessException | UrlInvalidaException e) {
+            context.getLogger().log("ERRO DE NEGÓCIO: " + e.getMessage() + "\n");
+            return response(400, "{\"error\":\"" + e.getMessage() + "\"}");
+        }
+        // ======= ERROS DE INFRA → HTTP 500 =======
+        catch (InfrastructureException e) {
             context.getLogger().log("ERRO DE INFRA: " + e.getMessage() + "\n");
             return response(500, "{\"error\":\"" + e.getMessage() + "\"}");
-        } catch (Exception e) {
+        }
+        // ======= ERRO GENÉRICO → HTTP 500 =======
+        catch (Exception e) {
             context.getLogger().log("ERRO INESPERADO: " + e.getMessage() + "\n");
             return response(500, "{\"error\":\"Erro interno no servidor\"}");
         }
@@ -69,42 +79,24 @@ public class UrlShortenerHandler implements RequestHandler<
 
         UrlShortenerDTO dto = mapper.readValue(request.getBody(), UrlShortenerDTO.class);
         String clientId = extrairClientId(request);
-        UrlShortenerDTO result = service.encurtar(dto.getOriginalUrl(), clientId);
 
-        /*
-         * A Lambda constrói a URL curta usando exclusivamente o domínio real
-         * que chegou na requisição. Não existe hardcode.
-         * A infra decide o domínio, a Lambda apenas respeita.
-         *
-         * Exemplos possíveis:
-         *  - 17i0e8ajt5.execute-api.us-east-1.amazonaws.com
-         *  - api.asantanadev.com
-         */
+        UrlShortenerDTO result = service.encurtar(dto.getOriginalUrl(), clientId);
 
         String domain = request.getHeaders().get("Host");
 
-        // Agora SEM stage, direto no root:
-        // https://api.asantanadev.com/{shortCode}
+        // URL curta final no domínio real
         String shortUrl = "https://" + domain + "/" + result.getShortCode();
         result.setShortUrl(shortUrl);
 
         return response(201, mapper.writeValueAsString(result));
     }
 
-    private String extrairClientId(APIGatewayProxyRequestEvent request) {
-        if (request.getHeaders() == null) return null;
-        String id = request.getHeaders().get("X-Client-ID");
-        return (id != null) ? id : request.getHeaders().get("x-client-id");
-    }
-
     private APIGatewayProxyResponseEvent handleGet(APIGatewayProxyRequestEvent request, Context context) throws Exception {
         String path = request.getPath();
-        // Extrai o código final da URL (ex: de /6f9e5a95 extrai 6f9e5a95)
         String shortCode = path.substring(path.lastIndexOf("/") + 1);
 
         UrlShortenerDTO result = service.buscarPorShortCode(shortCode);
 
-        // Redirecionamento real via HTTP 302
         APIGatewayProxyResponseEvent redirectResponse = new APIGatewayProxyResponseEvent();
         redirectResponse.setStatusCode(302);
         redirectResponse.setHeaders(Map.of(
@@ -112,6 +104,12 @@ public class UrlShortenerHandler implements RequestHandler<
                 "Access-Control-Allow-Origin", "*"
         ));
         return redirectResponse;
+    }
+
+    private String extrairClientId(APIGatewayProxyRequestEvent request) {
+        if (request.getHeaders() == null) return null;
+        String id = request.getHeaders().get("X-Client-ID");
+        return (id != null) ? id : request.getHeaders().get("x-client-id");
     }
 
     private APIGatewayProxyResponseEvent response(int status, String body) {
