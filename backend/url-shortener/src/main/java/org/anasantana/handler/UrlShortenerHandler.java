@@ -24,20 +24,14 @@ public class UrlShortenerHandler implements RequestHandler<
 
     private final UrlShortenerService service;
 
-    /**
-     * Construtor REAL (produção)
-     * Usado pela AWS Lambda automaticamente.
-     */
+    // Construtor real (produção)
     public UrlShortenerHandler() {
         EntityManagerSimples entityManager = new EntityManagerSimples();
         UrlShortenerRepository repository = new UrlShortenerRepository(entityManager);
         this.service = new UrlShortenerService(repository);
     }
 
-    /**
-     * Construtor para TESTES
-     * Permite injetar um service mockado/fake sem acessar AWS/DynamoDB.
-     */
+    // Construtor para testes
     public UrlShortenerHandler(UrlShortenerService service) {
         this.service = service;
     }
@@ -47,45 +41,38 @@ public class UrlShortenerHandler implements RequestHandler<
             APIGatewayProxyRequestEvent request,
             Context context) {
 
-        context.getLogger().log("========== NOVA REQUEST ==========\n");
-
         try {
             String method = request.getHttpMethod();
             String path = request.getPath();
 
-            // POST /url
-            if ("POST".equalsIgnoreCase(method) && path != null && path.endsWith("/url")) {
-                return handlePost(request, context);
+            if ("POST".equalsIgnoreCase(method) && path.endsWith("/url")) {
+                return handlePost(request);
             }
 
-            // GET /{shortCode}
             if ("GET".equalsIgnoreCase(method) && path != null && !path.equals("/")) {
-                return handleGet(request, context);
+                return handleGet(request);
             }
 
             return response(404, "{\"error\":\"Endpoint não encontrado\"}");
         }
 
-        // ===== REGRAS DE NEGÓCIO → HTTP 400 =====
+        // Qualquer erro de regra de negócio (URL inválida, regex não bate, etc)
         catch (BusinessException e) {
-            context.getLogger().log("ERRO DE NEGÓCIO: " + e.getMessage() + "\n");
             return response(400, "{\"error\":\"" + e.getMessage() + "\"}");
         }
 
-        // ===== ERROS DE INFRA → HTTP 500 =====
+        // Erros de infraestrutura
         catch (InfrastructureException e) {
-            context.getLogger().log("ERRO DE INFRA: " + e.getMessage() + "\n");
             return response(500, "{\"error\":\"" + e.getMessage() + "\"}");
         }
 
-        // ===== QUALQUER OUTRO ERRO → HTTP 500 =====
+        // Erro genérico
         catch (Exception e) {
-            context.getLogger().log("ERRO INESPERADO: " + e.getMessage() + "\n");
             return response(500, "{\"error\":\"Erro interno no servidor\"}");
         }
     }
 
-    private APIGatewayProxyResponseEvent handlePost(APIGatewayProxyRequestEvent request, Context context) throws Exception {
+    private APIGatewayProxyResponseEvent handlePost(APIGatewayProxyRequestEvent request) throws Exception {
         if (request.getBody() == null || request.getBody().isBlank()) {
             return response(400, "{\"error\":\"Body não pode ser vazio\"}");
         }
@@ -93,30 +80,33 @@ public class UrlShortenerHandler implements RequestHandler<
         UrlShortenerDTO dto = mapper.readValue(request.getBody(), UrlShortenerDTO.class);
         String clientId = extrairClientId(request);
 
+        /*
+         * AQUI acontece a mágica:
+         * se originalUrl NÃO for http ou https,
+         * o RegraNegocioValidator vai lançar BusinessException
+         * e o handler vai devolver 400 automaticamente.
+         */
         UrlShortenerDTO result = service.encurtar(dto.getOriginalUrl(), clientId);
 
         String domain = request.getHeaders().get("Host");
-
-        // URL curta final no domínio real
-        String shortUrl = "https://" + domain + "/" + result.getShortCode();
-        result.setShortUrl(shortUrl);
+        result.setShortUrl("https://" + domain + "/" + result.getShortCode());
 
         return response(201, mapper.writeValueAsString(result));
     }
 
-    private APIGatewayProxyResponseEvent handleGet(APIGatewayProxyRequestEvent request, Context context) throws Exception {
-        String path = request.getPath();
-        String shortCode = path.substring(path.lastIndexOf("/") + 1);
+    private APIGatewayProxyResponseEvent handleGet(APIGatewayProxyRequestEvent request) throws Exception {
+        String shortCode = request.getPath()
+                .substring(request.getPath().lastIndexOf("/") + 1);
 
         UrlShortenerDTO result = service.buscarPorShortCode(shortCode);
 
-        APIGatewayProxyResponseEvent redirectResponse = new APIGatewayProxyResponseEvent();
-        redirectResponse.setStatusCode(302);
-        redirectResponse.setHeaders(Map.of(
+        APIGatewayProxyResponseEvent redirect = new APIGatewayProxyResponseEvent();
+        redirect.setStatusCode(302);
+        redirect.setHeaders(Map.of(
                 "Location", result.getOriginalUrl(),
                 "Access-Control-Allow-Origin", "*"
         ));
-        return redirectResponse;
+        return redirect;
     }
 
     private String extrairClientId(APIGatewayProxyRequestEvent request) {
