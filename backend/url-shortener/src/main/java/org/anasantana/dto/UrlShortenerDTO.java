@@ -2,6 +2,7 @@ package org.anasantana.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.anasantana.annotation.ValidarURL;
 import org.anasantana.domain.UrlShortener;
 
 import java.io.Serializable;
@@ -14,7 +15,8 @@ public class UrlShortenerDTO implements Serializable {
 
     private String id;
     private String shortCode;
-    private String shortUrl;          
+    private String shortUrl;
+    @ValidarURL(mensagem = "Apenas URLs com http ou https são permitidas")
     private String originalUrl;
 
     @JsonFormat(

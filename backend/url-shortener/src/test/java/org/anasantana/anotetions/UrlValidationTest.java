@@ -1,7 +1,8 @@
 package org.anasantana.anotetions;
 
 import org.anasantana.annotation.ValidarURL;
-import org.anasantana.annotation.utils.validador.Validador;
+import org.anasantana.annotation.utils.validador.RegraNegocioValidator;
+import org.anasantana.service.exception.BusinessException;
 import org.anasantana.service.exception.UrlInvalidaException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,17 +26,17 @@ public class UrlValidationTest {
         ExemploUrl exemplo = new ExemploUrl("https://www.google.com");
         
         assertDoesNotThrow(() -> {
-            Validador.validar(exemplo, "user123");
+            RegraNegocioValidator.validar(exemplo, "user123");
         });
     }
 
     @Test
-    @DisplayName("Deve lançar UrlInvalidaException para URL mal formatada")
+    @DisplayName("Deve lançar BusinessException para URL mal formatada")
     void deveRejeitarUrlInvalida() {
         ExemploUrl exemplo = new ExemploUrl("url-invalida");
 
-        assertThrows(UrlInvalidaException.class, () -> {
-            Validador.validar(exemplo, "user123");
+        assertThrows(BusinessException.class, () -> {
+            RegraNegocioValidator.validar(exemplo, "user123");
         });
     }
 }

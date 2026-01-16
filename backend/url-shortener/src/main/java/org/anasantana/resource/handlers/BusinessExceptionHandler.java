@@ -11,13 +11,19 @@ import java.time.Instant;
 
 @Provider
 public class BusinessExceptionHandler implements ExceptionMapper<BusinessException> {
+
     @Context
     private UriInfo uriInfo;
 
     @Override
     public Response toResponse(BusinessException e) {
-        int status = 400; // BAD_REQUEST
-        CustomError err = new CustomError(Instant.now(), status, e.getMessage(), uriInfo.getPath());
+        int status = 400;
+        CustomError err = new CustomError(
+            Instant.now(),
+            status,
+            e.getMessage(),
+            uriInfo.getPath()
+        );
         return Response.status(status).entity(err).build();
     }
 }

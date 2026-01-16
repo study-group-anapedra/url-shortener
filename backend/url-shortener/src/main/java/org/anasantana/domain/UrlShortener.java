@@ -13,7 +13,7 @@ public class UrlShortener {
     @Indexed(unique = true)
     private String shortCode;
 
-    @ValidarURL
+    //@ValidarURL
     private String originalUrl;
 
     private Instant createdAt;

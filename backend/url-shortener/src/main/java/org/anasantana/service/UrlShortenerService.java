@@ -1,6 +1,6 @@
 package org.anasantana.service;
 
-import org.anasantana.annotation.utils.validador.Validador;
+import org.anasantana.annotation.utils.validador.RegraNegocioValidator;
 import org.anasantana.domain.UrlShortener;
 import org.anasantana.dto.UrlShortenerDTO;
 import org.anasantana.repository.UrlShortenerRepository;
@@ -46,7 +46,7 @@ public class UrlShortenerService {
 
     private void processarValidacao(UrlShortener entidade, String identificador) {
         try {
-            Validador.validar(entidade, identificador);
+            RegraNegocioValidator.validar(entidade, identificador);
         } catch (IllegalAccessException e) {
             throw new PersistenciaException("Erro de reflexão na validação", e);
         }

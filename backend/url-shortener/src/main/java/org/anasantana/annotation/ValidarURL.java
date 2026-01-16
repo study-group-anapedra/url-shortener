@@ -7,4 +7,5 @@ import java.lang.annotation.*;
 public @interface ValidarURL {
     // Regex restrito apenas para HTTP e HTTPS conforme esperado pelos testes [cite: 2025-12-23]
     String regex() default "^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+    String mensagem() default "Apenas URLs com http ou https são permitidas";
 }
