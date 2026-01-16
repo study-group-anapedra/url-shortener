@@ -169,7 +169,7 @@ Essa abordagem garante:
 
 ---
 
-### Passos – Frontend
+### Frontend
 
 - Criar interface web simples para:
   - Encurtar URLs
