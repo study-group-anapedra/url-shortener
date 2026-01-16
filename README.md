@@ -154,8 +154,9 @@ Essa abordagem garante:
 - **CI/CD:** GitHub Actions  
 
 ---
+## O que falta:
 
-## 🛠️ Próximos Passos – Refatoração do Código
+### Refatoração do Código
 
 - Padronizar nomes de métodos e pacotes  
 - Centralizar e melhorar o tratamento de exceções  
@@ -168,7 +169,7 @@ Essa abordagem garante:
 
 ---
 
-## 🎨 Próximos Passos – Frontend
+### Passos – Frontend
 
 - Criar interface web simples para:
   - Encurtar URLs
