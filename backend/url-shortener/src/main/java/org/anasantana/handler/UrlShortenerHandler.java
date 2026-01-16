@@ -12,7 +12,6 @@ import org.anasantana.repository.UrlShortenerRepository;
 import org.anasantana.service.UrlShortenerService;
 import org.anasantana.service.exception.BusinessException;
 import org.anasantana.service.exception.InfrastructureException;
-import org.anasantana.service.exception.UrlInvalidaException;
 
 import java.util.Map;
 
@@ -25,10 +24,22 @@ public class UrlShortenerHandler implements RequestHandler<
 
     private final UrlShortenerService service;
 
+    /**
+     * Construtor REAL (produção)
+     * Usado pela AWS Lambda automaticamente.
+     */
     public UrlShortenerHandler() {
         EntityManagerSimples entityManager = new EntityManagerSimples();
         UrlShortenerRepository repository = new UrlShortenerRepository(entityManager);
         this.service = new UrlShortenerService(repository);
+    }
+
+    /**
+     * Construtor para TESTES
+     * Permite injetar um service mockado/fake sem acessar AWS/DynamoDB.
+     */
+    public UrlShortenerHandler(UrlShortenerService service) {
+        this.service = service;
     }
 
     @Override
@@ -42,30 +53,32 @@ public class UrlShortenerHandler implements RequestHandler<
             String method = request.getHttpMethod();
             String path = request.getPath();
 
-            // 1. CRIAR URL (POST /url)
+            // POST /url
             if ("POST".equalsIgnoreCase(method) && path != null && path.endsWith("/url")) {
                 return handlePost(request, context);
             }
 
-            // 2. REDIRECIONAR (GET /{shortCode})
+            // GET /{shortCode}
             if ("GET".equalsIgnoreCase(method) && path != null && !path.equals("/")) {
                 return handleGet(request, context);
             }
 
             return response(404, "{\"error\":\"Endpoint não encontrado\"}");
-
         }
-        // ======= REGRAS DE NEGÓCIO → HTTP 400 =======
-        catch (BusinessException | UrlInvalidaException e) {
+
+        // ===== REGRAS DE NEGÓCIO → HTTP 400 =====
+        catch (BusinessException e) {
             context.getLogger().log("ERRO DE NEGÓCIO: " + e.getMessage() + "\n");
             return response(400, "{\"error\":\"" + e.getMessage() + "\"}");
         }
-        // ======= ERROS DE INFRA → HTTP 500 =======
+
+        // ===== ERROS DE INFRA → HTTP 500 =====
         catch (InfrastructureException e) {
             context.getLogger().log("ERRO DE INFRA: " + e.getMessage() + "\n");
             return response(500, "{\"error\":\"" + e.getMessage() + "\"}");
         }
-        // ======= ERRO GENÉRICO → HTTP 500 =======
+
+        // ===== QUALQUER OUTRO ERRO → HTTP 500 =====
         catch (Exception e) {
             context.getLogger().log("ERRO INESPERADO: " + e.getMessage() + "\n");
             return response(500, "{\"error\":\"Erro interno no servidor\"}");
