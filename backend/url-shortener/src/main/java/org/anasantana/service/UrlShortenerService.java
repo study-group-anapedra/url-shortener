@@ -19,6 +19,9 @@ public class UrlShortenerService {
     }
 
     public UrlShortenerDTO encurtar(String originalUrl, String identificador) {
+
+        validarUrl(originalUrl); // ← regra de negócio clara aqui
+
         Optional<UrlShortener> existente = repository.findByOriginalUrl(originalUrl);
         if (existente.isPresent()) {
             return new UrlShortenerDTO(existente.get());
@@ -42,6 +45,16 @@ public class UrlShortenerService {
         }
 
         throw new CodigoCurtoNaoDisponivelException();
+    }
+
+    private void validarUrl(String originalUrl) {
+        if (originalUrl == null || originalUrl.isBlank()) {
+            throw new BusinessException("A URL original não pode ser vazia");
+        }
+
+        if (!originalUrl.startsWith("http://") && !originalUrl.startsWith("https://")) {
+            throw new BusinessException("A URL original deve começar com http:// ou https://");
+        }
     }
 
     private void processarValidacao(UrlShortener entidade, String identificador) {
