@@ -10,17 +10,16 @@ import org.anasantana.annotation.utils.orm.EntityManagerSimples;
 import org.anasantana.dto.UrlShortenerDTO;
 import org.anasantana.repository.UrlShortenerRepository;
 import org.anasantana.service.UrlShortenerService;
+import org.anasantana.service.exception.AbusoDeRequisicaoException;
 import org.anasantana.service.exception.InfrastructureException;
+import org.anasantana.service.exception.UrlInvalidaException;
+import org.anasantana.service.exception.UrlNaoEncontradaException;
 
 import java.util.Map;
 
-public class UrlShortenerHandler implements RequestHandler<
-        APIGatewayProxyRequestEvent,
-        APIGatewayProxyResponseEvent> {
+public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private static final ObjectMapper mapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
-
+    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private final UrlShortenerService service;
 
     public UrlShortenerHandler() {
@@ -30,34 +29,30 @@ public class UrlShortenerHandler implements RequestHandler<
     }
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(
-            APIGatewayProxyRequestEvent request,
-            Context context) {
-
-        context.getLogger().log("========== NOVA REQUEST ==========\n");
-
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
         try {
             String method = request.getHttpMethod();
             String path = request.getPath();
 
-            // 1. CRIAR URL (POST /url)
             if ("POST".equalsIgnoreCase(method) && path != null && path.endsWith("/url")) {
                 return handlePost(request, context);
             }
-
-            // 2. REDIRECIONAR (GET /{shortCode})
-            // Agora pensado para funcionar no ROOT do domínio, sem /dev
             if ("GET".equalsIgnoreCase(method) && path != null && !path.equals("/")) {
                 return handleGet(request, context);
             }
-
             return response(404, "{\"error\":\"Endpoint não encontrado\"}");
 
+        } catch (UrlInvalidaException e) {
+            return response(400, "{\"error\":\"" + e.getMessage() + "\"}");
+        } catch (AbusoDeRequisicaoException e) {
+            return response(429, "{\"error\":\"Muitas requisições. Tente mais tarde.\"}");
+        } catch (UrlNaoEncontradaException e) {
+            return response(404, "{\"error\":\"URL não encontrada\"}");
         } catch (InfrastructureException e) {
-            context.getLogger().log("ERRO DE INFRA: " + e.getMessage() + "\n");
-            return response(500, "{\"error\":\"" + e.getMessage() + "\"}");
+            context.getLogger().log("ERRO DE INFRA: " + e.getMessage());
+            return response(500, "{\"error\":\"Falha na infraestrutura\"}");
         } catch (Exception e) {
-            context.getLogger().log("ERRO INESPERADO: " + e.getMessage() + "\n");
+            context.getLogger().log("ERRO INESPERADO: " + e.getMessage());
             return response(500, "{\"error\":\"Erro interno no servidor\"}");
         }
     }
@@ -69,59 +64,35 @@ public class UrlShortenerHandler implements RequestHandler<
 
         UrlShortenerDTO dto = mapper.readValue(request.getBody(), UrlShortenerDTO.class);
         String clientId = extrairClientId(request);
-        UrlShortenerDTO result = service.encurtar(dto.getOriginalUrl(), clientId);
+        UrlShortenerDTO result = service.encurtar(dto, clientId);
 
-        /*
-         * A Lambda constrói a URL curta usando exclusivamente o domínio real
-         * que chegou na requisição. Não existe hardcode.
-         * A infra decide o domínio, a Lambda apenas respeita.
-         *
-         * Exemplos possíveis:
-         *  - 17i0e8ajt5.execute-api.us-east-1.amazonaws.com
-         *  - api.asantanadev.com
-         */
-
-        String domain = request.getHeaders().get("Host");
-
-        // Agora SEM stage, direto no root:
-        // https://api.asantanadev.com/{shortCode}
-        String shortUrl = "https://" + domain + "/" + result.getShortCode();
-        result.setShortUrl(shortUrl);
+        String domain = request.getHeaders().getOrDefault("Host", "api.asantanadev.com");
+        result.setShortUrl("https://" + domain + "/" + result.getShortCode());
 
         return response(201, mapper.writeValueAsString(result));
     }
 
     private String extrairClientId(APIGatewayProxyRequestEvent request) {
-        if (request.getHeaders() == null) return null;
+        if (request.getHeaders() == null) return "anonymous";
         String id = request.getHeaders().get("X-Client-ID");
-        return (id != null) ? id : request.getHeaders().get("x-client-id");
+        if (id == null) id = request.getHeaders().get("x-client-id");
+        return (id != null) ? id : request.getRequestContext().getIdentity().getSourceIp();
     }
 
     private APIGatewayProxyResponseEvent handleGet(APIGatewayProxyRequestEvent request, Context context) throws Exception {
         String path = request.getPath();
-        // Extrai o código final da URL (ex: de /6f9e5a95 extrai 6f9e5a95)
         String shortCode = path.substring(path.lastIndexOf("/") + 1);
-
         UrlShortenerDTO result = service.buscarPorShortCode(shortCode);
 
-        // Redirecionamento real via HTTP 302
-        APIGatewayProxyResponseEvent redirectResponse = new APIGatewayProxyResponseEvent();
-        redirectResponse.setStatusCode(302);
-        redirectResponse.setHeaders(Map.of(
-                "Location", result.getOriginalUrl(),
-                "Access-Control-Allow-Origin", "*"
-        ));
-        return redirectResponse;
+        return new APIGatewayProxyResponseEvent()
+                .withStatusCode(302)
+                .withHeaders(Map.of("Location", result.getOriginalUrl(), "Access-Control-Allow-Origin", "*"));
     }
 
     private APIGatewayProxyResponseEvent response(int status, String body) {
-        APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-        response.setStatusCode(status);
-        response.setBody(body);
-        response.setHeaders(Map.of(
-                "Content-Type", "application/json",
-                "Access-Control-Allow-Origin", "*"
-        ));
-        return response;
+        return new APIGatewayProxyResponseEvent()
+                .withStatusCode(status)
+                .withBody(body)
+                .withHeaders(Map.of("Content-Type", "application/json", "Access-Control-Allow-Origin", "*"));
     }
-} 
+}

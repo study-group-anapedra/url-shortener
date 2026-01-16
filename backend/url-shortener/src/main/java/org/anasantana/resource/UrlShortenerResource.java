@@ -17,7 +17,7 @@ public class UrlShortenerResource {
 
     @POST
     public Response encurtar(UrlShortenerDTO dto, @HeaderParam("X-Client-ID") String clientId) {
-        UrlShortenerDTO resultado = service.encurtar(dto.getOriginalUrl(), clientId);
+        UrlShortenerDTO resultado = service.encurtar(dto, clientId);
         return Response.status(Response.Status.CREATED).entity(resultado).build();
     }
 

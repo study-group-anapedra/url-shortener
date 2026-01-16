@@ -40,8 +40,7 @@ public class UrlShortenerResourceTest {
         UrlShortenerDTO mockResult = new UrlShortenerDTO(urlOriginal, "ABC1234");
         
         // Configura o mock para retornar o objeto preenchido
-        when(service.encurtar(anyString(), anyString())).thenReturn(mockResult);
-
+        when(service.encurtar(any(UrlShortenerDTO.class), anyString())).thenReturn(mockResult);
         // 3. Execução
         Response response = resource.encurtar(inputDto, clientId);
 

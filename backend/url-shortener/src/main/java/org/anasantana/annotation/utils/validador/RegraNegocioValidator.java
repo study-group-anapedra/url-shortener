@@ -5,6 +5,7 @@ import org.anasantana.annotation.RateLimited;
 import org.anasantana.annotation.ValidarURL;
 import org.anasantana.service.exception.AbusoDeRequisicaoException;
 import org.anasantana.service.exception.BusinessException;
+import org.anasantana.service.exception.UrlInvalidaException;
 
 import java.lang.reflect.Field;
 import java.security.SecureRandom;
@@ -22,16 +23,15 @@ public final class RegraNegocioValidator {
         // impede instanciação
     }
 
-    public static void validar(Object objeto, String identificadorUsuario) throws IllegalAccessException {
-        if (objeto == null) {
-            return;
-        }
+    // Prevalece o nome e estrutura da classe Validador
+    public static void validar(Object objeto, String idUsuario) throws IllegalAccessException {
+        if (objeto == null) return;
 
         Class<?> clazz = objeto.getClass();
 
-        // 1. RATE LIMIT (nível de classe)
+        // 1. RATE LIMIT
         if (clazz.isAnnotationPresent(RateLimited.class)) {
-            processarRateLimit(identificadorUsuario, clazz.getAnnotation(RateLimited.class));
+            processarRateLimit(idUsuario, clazz.getAnnotation(RateLimited.class));
         }
 
         // 2. VALIDAÇÕES E GERAÇÕES POR CAMPO
@@ -39,35 +39,30 @@ public final class RegraNegocioValidator {
             field.setAccessible(true);
             Object valor = field.get(objeto);
 
-            // 2.1 Geração automática de código
-            if (field.isAnnotationPresent(GerarCodigo.class)
-                    && (valor == null || valor.toString().isEmpty())) {
-
+            // 2.1 Geração automática de código (Prevalece o método gerarTexto)
+            if (field.isAnnotationPresent(GerarCodigo.class) && (valor == null || valor.toString().isEmpty())) {
                 GerarCodigo config = field.getAnnotation(GerarCodigo.class);
-                String novoCodigo = gerarRandomico(config.tamanho(), config.alfabeto());
-                field.set(objeto, novoCodigo);
-                valor = novoCodigo;
+                String codigoGerado = gerarTexto(config.tamanho(), config.alfabeto());
+                field.set(objeto, codigoGerado);
+                valor = codigoGerado;
             }
 
-            // 2.2 Validação de URL
+            // 2.2 Validação de URL (Traz o método diferente: usa anotacao.mensagem() se falhar)
             if (field.isAnnotationPresent(ValidarURL.class)) {
                 ValidarURL anotacao = field.getAnnotation(ValidarURL.class);
-
                 String url = (valor != null) ? valor.toString() : "";
 
-                if (url.isEmpty()
-                        || url.length() > 2048
-                        || !Pattern.compile(anotacao.regex()).matcher(url).matches()) {
-
+                if (url.length() > 2048 || url.isEmpty() || !Pattern.compile(anotacao.regex()).matcher(url).matches()) {
+                    // Mantido o comportamento da RegraNegocioValidator original (mensagem customizada)
                     throw new BusinessException(anotacao.mensagem());
                 }
             }
         }
     }
 
-    // ===== Métodos auxiliares =====
+    // ===== Métodos auxiliares (Prevalece a escrita da classe Validador) =====
 
-    private static String gerarRandomico(int tamanho, String alfabeto) {
+    private static String gerarTexto(int tamanho, String alfabeto) {
         StringBuilder sb = new StringBuilder(tamanho);
         for (int i = 0; i < tamanho; i++) {
             sb.append(alfabeto.charAt(RANDOM.nextInt(alfabeto.length())));
@@ -77,28 +72,17 @@ public final class RegraNegocioValidator {
 
     private static void processarRateLimit(String chave, RateLimited config) {
         long agora = Instant.now().getEpochSecond();
-
-        controleRateLimit.compute(chave, (k, janela) -> {
-            if (janela == null || agora - janela.inicio >= config.janelaSegundos()) {
-                return new Janela(1, agora);
-            }
-
-            if (janela.contador >= config.limite()) {
-                throw new AbusoDeRequisicaoException();
-            }
-
-            janela.contador++;
-            return janela;
+        controleRateLimit.compute(chave, (k, j) -> {
+            if (j == null || agora - j.inicio >= config.janelaSegundos()) return new Janela(1, agora);
+            if (j.contador >= config.limite()) throw new AbusoDeRequisicaoException();
+            j.contador++;
+            return j;
         });
     }
 
     private static class Janela {
-        int contador;
+        int contador; 
         long inicio;
-
-        Janela(int contador, long inicio) {
-            this.contador = contador;
-            this.inicio = inicio;
-        }
+        Janela(int c, long i) { this.contador = c; this.inicio = i; }
     }
 }

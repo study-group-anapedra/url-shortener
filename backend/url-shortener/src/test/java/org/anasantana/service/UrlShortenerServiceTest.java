@@ -21,14 +21,21 @@ public class UrlShortenerServiceTest {
 
     @Test
     void deveRetornarMesmoCodigoParaUrlJaExistente() {
+        // 1. Preparação
         String urlOriginal = "https://www.google.com";
         UrlShortener urlExistente = new UrlShortener(urlOriginal, "abc123");
-        
+
+        // Criamos o DTO que o Service agora exige
+        UrlShortenerDTO dtoEntrada = new UrlShortenerDTO();
+        dtoEntrada.setOriginalUrl(urlOriginal);
+
         when(repository.findByOriginalUrl(urlOriginal)).thenReturn(Optional.of(urlExistente));
 
-        UrlShortenerDTO resultado = service.encurtar(urlOriginal, "usuario-teste");
+        // 2. Execução (Passando o objeto DTO em vez da String)
+        UrlShortenerDTO resultado = service.encurtar(dtoEntrada, "usuario-teste");
 
-        assertEquals("abc123", resultado.getShortCode()); // Compara apenas a String [cite: 2025-12-23]
+        // 3. Verificações
+        assertEquals("abc123", resultado.getShortCode());
         verify(repository, never()).save(any());
     }
 }
