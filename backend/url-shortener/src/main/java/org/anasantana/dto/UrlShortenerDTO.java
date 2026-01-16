@@ -16,7 +16,7 @@ public class UrlShortenerDTO implements Serializable {
     private String id;
     private String shortCode;
     private String shortUrl;
-    //@ValidarURL(mensagem = "Apenas URLs com http ou https são permitidas")
+    @ValidarURL(mensagem = "Apenas URLs com http ou https são permitidas")
     private String originalUrl;
 
     @JsonFormat(
