@@ -64,14 +64,10 @@ Essa abordagem garante:
   </a>
 </p>
 
-<p>
-  <a href="https://drive.google.com/file/d/1Y7CB1LChr00P4kD-I3obXSxYdFsPEEV/view?usp=sharing">
-    🔗 👉 Backend rodando na AWS Lambda
-  </a>
-</p>
+
 
 <p>
-  <a href="https://drive.google.com/file/d/1iy_Is7rPhbDrS4l8P4yckylqzb_9mnPV/view?usp=sharing">
+  <a href="https://drive.google.com/file/d/1aVY8O0fKkxbtSsVWZJGECPvhrt_tl30O/view?usp=sharing">
     🔗 👉 Validação de regras:
     <br>• URL original repetida gera a mesma URL curta  
     <br>• Não permite campos vazios  
@@ -79,11 +75,7 @@ Essa abordagem garante:
   </a>
 </p>
 
-<p>
-  <a href="https://drive.google.com/file/d/1iy_Is7rPhbDrS4l8P4yckylqzb_9mnPV/view?usp=sharing">
-    🔗 👉 Correção de erros em produção via GitHub Actions (Hotfix)
-  </a>
-</p>
+
 
 ---
 
