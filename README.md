@@ -77,6 +77,12 @@ Essa abordagem garante:
 
 
 
+
+<p>
+  <a href="https://drive.google.com/file/d/1Pt6VqGNVci708Nh5GZ5fYzYTuDFeN9ee/view?usp=sharing">
+    🔗 👉 Deploy Automatizado via GitHub Actions
+  </a>
+</p>
 ---
 
 ## 🧩 Diagramas
@@ -137,7 +143,7 @@ Essa abordagem garante:
 
 ## 🧱 Stack Tecnológica
 
-- **Linguagem:** Java 21 (AWS Lambda Runtime)  
+- **Linguagem:** Java 17 (AWS Lambda Runtime)  
 - **Banco de Dados:** Amazon DynamoDB (NoSQL com TTL nativo)  
 - **Infraestrutura:** AWS Lambda, API Gateway, CloudWatch  
 - **IaC:** AWS CloudFormation  
