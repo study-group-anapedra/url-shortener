@@ -6,12 +6,21 @@ export default function ShortenerForm({ onResult }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  function isValidUrl(value) {
+    try {
+      const u = new URL(value);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    if (!url) {
-      setError("Digite uma URL válida");
+    if (!url || !isValidUrl(url)) {
+      setError("Digite uma URL válida (http ou https)");
       return;
     }
 
@@ -20,11 +29,16 @@ export default function ShortenerForm({ onResult }) {
 
       const result = await encurtarUrl(url);
 
-      onResult(result); // envia resultado pro componente pai
+      // garante que veio o campo esperado
+      if (!result?.shortUrl) {
+        throw new Error("Resposta inválida da API");
+      }
+
+      onResult(result);
       setUrl("");
 
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || "Erro ao encurtar URL");
     } finally {
       setLoading(false);
     }
@@ -37,15 +51,16 @@ export default function ShortenerForm({ onResult }) {
       <form className="form" onSubmit={handleSubmit}>
         <input
           className="input"
-          type="text"
-          placeholder="Paste your long URL here..."
+          type="url"
+          placeholder="https://exemplo.com/..."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           aria-label="URL para encurtar"
+          required
         />
 
         <button className="button" type="submit" disabled={loading}>
-          {loading ? "..." : "Shorten"}
+          {loading ? "Gerando..." : "Shorten"}
         </button>
       </form>
 
