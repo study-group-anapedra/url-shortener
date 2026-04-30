@@ -188,7 +188,7 @@ Desenvolvido por **Ana Santana**
 
 - 📞 Telefone: 31 99975-02148  
 - 📧 E-mail: anapedra.mil@gmail.com  
-- 💼 LinkedIn: https://www.linkedin.com/in/ana-lopes-santana/
+- 💼 LinkedIn: https://www.linkedin.com/in/anasantana-dev/
 
 ---
 
