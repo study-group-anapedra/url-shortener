@@ -31,12 +31,19 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
             String method = request.getHttpMethod();
             String path = request.getPath();
 
+            //CORS preflight
+            if ("OPTIONS".equalsIgnoreCase(method)) {
+                return response(200, "");
+            }
+
             if ("POST".equalsIgnoreCase(method) && path != null && path.endsWith("/url")) {
                 return handlePost(request, context);
             }
+
             if ("GET".equalsIgnoreCase(method) && path != null && !path.equals("/")) {
                 return handleGet(request, context);
             }
+
             return response(404, "{\"error\":\"Endpoint não encontrado\"}");
 
         } catch (BusinessException e) {
@@ -83,13 +90,23 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
 
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(302)
-                .withHeaders(Map.of("Location", result.getOriginalUrl(), "Access-Control-Allow-Origin", "*"));
+                .withHeaders(Map.of(
+                        "Location", result.getOriginalUrl(),
+                        "Access-Control-Allow-Origin", "*",
+                        "Access-Control-Allow-Headers", "*",
+                        "Access-Control-Allow-Methods", "GET,POST,OPTIONS"
+                ));
     }
 
     private APIGatewayProxyResponseEvent response(int status, String body) {
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(status)
                 .withBody(body)
-                .withHeaders(Map.of("Content-Type", "application/json", "Access-Control-Allow-Origin", "*"));
+                .withHeaders(Map.of(
+                        "Content-Type", "application/json",
+                        "Access-Control-Allow-Origin", "*",
+                        "Access-Control-Allow-Headers", "*",
+                        "Access-Control-Allow-Methods", "GET,POST,OPTIONS"
+                ));
     }
 }
