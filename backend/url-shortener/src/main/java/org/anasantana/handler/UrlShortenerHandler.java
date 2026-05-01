@@ -31,12 +31,21 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
             String method = request.getHttpMethod();
             String path = request.getPath();
 
+            //CORS PRE-FLIGHT (ESSENCIAL)
+            if ("OPTIONS".equalsIgnoreCase(method)) {
+                return new APIGatewayProxyResponseEvent()
+                        .withStatusCode(200)
+                        .withHeaders(corsHeaders());
+            }
+
             if ("POST".equalsIgnoreCase(method) && path != null && path.endsWith("/url")) {
                 return handlePost(request, context);
             }
+
             if ("GET".equalsIgnoreCase(method) && path != null && !path.equals("/")) {
                 return handleGet(request, context);
             }
+
             return response(404, "{\"error\":\"Endpoint não encontrado\"}");
 
         } catch (BusinessException e) {
@@ -63,7 +72,10 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
         String clientId = extrairClientId(request);
         UrlShortenerDTO result = service.encurtar(dto, clientId);
 
-        String domain = request.getHeaders().getOrDefault("Host", "api.asantanadev.com");
+        String domain = request.getHeaders() != null
+                ? request.getHeaders().getOrDefault("Host", "api.asantanadev.com")
+                : "api.asantanadev.com";
+
         result.setShortUrl("https://" + domain + "/" + result.getShortCode());
 
         return response(201, mapper.writeValueAsString(result));
@@ -83,13 +95,30 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
 
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(302)
-                .withHeaders(Map.of("Location", result.getOriginalUrl(), "Access-Control-Allow-Origin", "*"));
+                .withHeaders(Map.of(
+                        "Location", result.getOriginalUrl(),
+                        "Access-Control-Allow-Origin", "*"
+                ));
+    }
+
+    //MÉTODO CENTRALIZADO DE HEADERS CORS
+    private Map<String, String> corsHeaders() {
+        return Map.of(
+                "Access-Control-Allow-Origin", "*",
+                "Access-Control-Allow-Methods", "GET,POST,OPTIONS",
+                "Access-Control-Allow-Headers", "Content-Type,X-Client-ID"
+        );
     }
 
     private APIGatewayProxyResponseEvent response(int status, String body) {
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(status)
                 .withBody(body)
-                .withHeaders(Map.of("Content-Type", "application/json", "Access-Control-Allow-Origin", "*"));
+                .withHeaders(Map.of(
+                        "Content-Type", "application/json",
+                        "Access-Control-Allow-Origin", "*",
+                        "Access-Control-Allow-Methods", "GET,POST,OPTIONS",
+                        "Access-Control-Allow-Headers", "Content-Type,X-Client-ID"
+                ));
     }
 }
