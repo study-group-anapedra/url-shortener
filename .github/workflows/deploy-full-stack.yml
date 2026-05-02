@@ -13,7 +13,7 @@ env:
 
   # Bucket REAL que existe no S3 (sem -prod-)
   ARTIFACT_BUCKET: url-shortener-artifacts-ana
-  ARTIFACT_KEY: lambda/url-shortener.jar
+  ARTIFACT_KEY: lambda/url-shortener-${{ github.run_id }}.jar
 
   STACK_NAME_INFRA: url-shortener-infra-prod
   STACK_NAME_DNS: url-shortener-dns-prod
