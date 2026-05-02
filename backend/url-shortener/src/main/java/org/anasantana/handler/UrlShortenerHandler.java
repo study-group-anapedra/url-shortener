@@ -32,7 +32,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
             String method = request.getHttpMethod();
             String path = request.getPath();
 
-            // 🔥 CORS PRE-FLIGHT
+            //CORS PRE-FLIGHT
             if ("OPTIONS".equalsIgnoreCase(method)) {
                 return new APIGatewayProxyResponseEvent()
                         .withStatusCode(200)
