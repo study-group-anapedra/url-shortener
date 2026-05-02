@@ -1,6 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   API Gateway HTTP para o projeto URL Shortener.
+  Integra com a Lambda via AWS_PROXY usando Payload 1.0.
+  Com domínio customizado api.asantanadev.com e mapeamento no root.
 
 Parameters:
   ProjectName:
@@ -60,13 +62,6 @@ Resources:
       RouteKey: "GET /url/{shortCode}"
       Target: !Sub "integrations/${LambdaIntegration}"
 
-  OptionsRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: "OPTIONS /{proxy+}"
-      Target: !Sub "integrations/${LambdaIntegration}"
-
   ApiStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
@@ -85,6 +80,10 @@ Resources:
         - "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/*"
         - { ApiId: !Ref HttpApi }
 
+  # ===========================
+  # DOMÍNIO CUSTOMIZADO
+  # ===========================
+
   CustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
@@ -93,6 +92,10 @@ Resources:
         - CertificateArn: arn:aws:acm:us-east-1:365646127398:certificate/63e80d1b-c0cc-402b-a280-409296304096
           EndpointType: REGIONAL
           SecurityPolicy: TLS_1_2
+
+  # ===========================
+  # MAPEAMENTO DA API
+  # ===========================
 
   ApiMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
@@ -103,18 +106,23 @@ Resources:
       ApiMappingKey: ""
 
 Outputs:
+
   ApiEndpoint:
+    Description: URL base da API (AWS)
     Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
 
   CustomDomainEndpoint:
+    Description: URL com domínio próprio
     Value: "https://api.asantanadev.com"
 
   ApiGatewayDomainName:
+    Description: Domain real do API Gateway (para Route53)
     Value: !GetAtt CustomDomain.RegionalDomainName
     Export:
       Name: !Sub "${ProjectName}-${Environment}-ApiGatewayDomainName"
 
   ApiGatewayHostedZoneId:
+    Description: HostedZoneId do API Gateway
     Value: !GetAtt CustomDomain.RegionalHostedZoneId
     Export:
       Name: !Sub "${ProjectName}-${Environment}-ApiGatewayHostedZoneId"
