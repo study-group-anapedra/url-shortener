@@ -31,11 +31,12 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
             String method = request.getHttpMethod();
             String path = request.getPath();
 
-            //CORS PRE-FLIGHT (ESSENCIAL)
+            //CORS PRE-FLIGHT (OBRIGATÓRIO)
             if ("OPTIONS".equalsIgnoreCase(method)) {
                 return new APIGatewayProxyResponseEvent()
                         .withStatusCode(200)
-                        .withHeaders(corsHeaders());
+                        .withHeaders(corsHeaders())
+                        .withBody(""); // ESSENCIAL
             }
 
             if ("POST".equalsIgnoreCase(method) && path != null && path.endsWith("/url")) {
@@ -101,7 +102,6 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
                 ));
     }
 
-    //MÉTODO CENTRALIZADO DE HEADERS CORS
     private Map<String, String> corsHeaders() {
         return Map.of(
                 "Access-Control-Allow-Origin", "*",
@@ -121,4 +121,4 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
                         "Access-Control-Allow-Headers", "Content-Type,X-Client-ID"
                 ));
     }
-}//force deploy
+}
