@@ -35,7 +35,10 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
 
             // ===== CORS PRE-FLIGHT =====
             if ("OPTIONS".equals(method)) {
-                return response(200, "");
+                return new APIGatewayProxyResponseEvent()
+                        .withStatusCode(200)
+                        .withHeaders(corsHeaders())
+                        .withBody("");
             }
 
             // ===== POST /url =====
@@ -106,6 +109,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
             String ip = request.getRequestContext().getIdentity().getSourceIp();
             if (ip != null) return ip;
         }
+
         return "anonymous";
     }
 
@@ -125,7 +129,6 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
     }
 
     private APIGatewayProxyResponseEvent response(int status, String body) {
-
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(status)
                 .withHeaders(corsHeaders())
