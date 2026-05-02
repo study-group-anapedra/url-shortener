@@ -28,9 +28,6 @@ Resources:
           - OPTIONS
         AllowOrigins:
           - "*"
-        AllowHeaders:
-          - Content-Type
-          - X-Client-ID
 
   LambdaIntegration:
     Type: AWS::ApiGatewayV2::Integration
@@ -80,9 +77,9 @@ Resources:
         - "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/*"
         - { ApiId: !Ref HttpApi }
 
-  # ===========================
+  # =====================================================
   # DOMÍNIO CUSTOMIZADO
-  # ===========================
+  # =====================================================
 
   CustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
@@ -93,9 +90,9 @@ Resources:
           EndpointType: REGIONAL
           SecurityPolicy: TLS_1_2
 
-  # ===========================
-  # MAPEAMENTO DA API
-  # ===========================
+  # =====================================================
+  # MAPEAMENTO DA API NO ROOT DO DOMÍNIO
+  # =====================================================
 
   ApiMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
@@ -106,23 +103,26 @@ Resources:
       ApiMappingKey: ""
 
 Outputs:
-
   ApiEndpoint:
-    Description: URL base da API (AWS)
+    Description: URL base da API (domínio AWS)
     Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
 
   CustomDomainEndpoint:
-    Description: URL com domínio próprio
+    Description: URL base da API com domínio próprio
     Value: "https://api.asantanadev.com"
 
+  # ===========================
+  # EXPORTS PARA O DNS
+  # ===========================
+
   ApiGatewayDomainName:
-    Description: Domain real do API Gateway (para Route53)
+    Description: Domain name real do API Gateway para alias no Route53
     Value: !GetAtt CustomDomain.RegionalDomainName
     Export:
       Name: !Sub "${ProjectName}-${Environment}-ApiGatewayDomainName"
 
   ApiGatewayHostedZoneId:
-    Description: HostedZoneId do API Gateway
+    Description: HostedZoneId real do API Gateway para alias no Route53
     Value: !GetAtt CustomDomain.RegionalHostedZoneId
     Export:
       Name: !Sub "${ProjectName}-${Environment}-ApiGatewayHostedZoneId"
