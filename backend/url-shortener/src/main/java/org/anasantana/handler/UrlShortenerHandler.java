@@ -35,10 +35,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
 
             // ===== CORS PRE-FLIGHT =====
             if ("OPTIONS".equals(method)) {
-                return new APIGatewayProxyResponseEvent()
-                        .withStatusCode(200)
-                        .withHeaders(corsHeaders())
-                        .withBody("");
+                return response(200, "");
             }
 
             // ===== POST /url =====
@@ -66,6 +63,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
     }
 
     private APIGatewayProxyResponseEvent handlePost(APIGatewayProxyRequestEvent request) throws Exception {
+
         if (request.getBody() == null || request.getBody().isBlank()) {
             return response(400, jsonError("Body vazio"));
         }
@@ -82,6 +80,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
     }
 
     private APIGatewayProxyResponseEvent handleGet(APIGatewayProxyRequestEvent request) throws Exception {
+
         String path = request.getPath();
         String shortCode = path.substring(path.lastIndexOf("/") + 1);
 
@@ -103,7 +102,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
         if (id != null && !id.isBlank()) return id;
 
         if (request.getRequestContext() != null &&
-            request.getRequestContext().getIdentity() != null) {
+                request.getRequestContext().getIdentity() != null) {
             String ip = request.getRequestContext().getIdentity().getSourceIp();
             if (ip != null) return ip;
         }
@@ -126,6 +125,7 @@ public class UrlShortenerHandler implements RequestHandler<APIGatewayProxyReques
     }
 
     private APIGatewayProxyResponseEvent response(int status, String body) {
+
         return new APIGatewayProxyResponseEvent()
                 .withStatusCode(status)
                 .withHeaders(corsHeaders())
