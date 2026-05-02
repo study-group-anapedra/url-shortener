@@ -10,7 +10,8 @@ export async function encurtarUrl(originalUrl) {
       originalUrl: originalUrl
     })
   });
-
+  
+  // teste
   if (!response.ok) {
     throw new Error("Erro ao encurtar URL");
   }
