@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { encurtarUrl } from "../services/api";
 
-export default function ShortenerForm({ onResult }) {
+export default function ShortenerForm({ onSuccess }) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,14 +29,12 @@ export default function ShortenerForm({ onResult }) {
 
       const result = await encurtarUrl(url);
 
-      // garante que veio o campo esperado
       if (!result?.shortUrl) {
         throw new Error("Resposta inválida da API");
       }
 
-      onResult(result);
+      onSuccess(result);
       setUrl("");
-
     } catch (err) {
       setError(err?.message || "Erro ao encurtar URL");
     } finally {
