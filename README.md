@@ -91,7 +91,8 @@ Essa abordagem garante:
   </a>
 </p>
 ---
-🧩 Diagramas
+
+## 🧩 Diagramas
 
 <p>
   <a href="https://github.com/study-group-anapedra/url-shortener/blob/main/diagramas/arquitetura-aws.jpg">
