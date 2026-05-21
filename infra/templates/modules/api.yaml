@@ -22,12 +22,15 @@ Resources:
       Name: !Sub "${ProjectName}-${Environment}-api"
       ProtocolType: HTTP
       CorsConfiguration:
+        AllowOrigins:
+          - "http://short-dev-frontend.s3-website-us-east-1.amazonaws.com"
         AllowMethods:
           - POST
           - GET
           - OPTIONS
-        AllowOrigins:
-          - "*"
+        AllowHeaders:
+           - Content-Type
+           - X-Client-ID
 
   LambdaIntegration:
     Type: AWS::ApiGatewayV2::Integration
