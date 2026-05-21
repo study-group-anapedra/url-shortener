@@ -20,7 +20,7 @@ env:
 
   # Parâmetros do DNS
   DOMAIN_NAME: api.asantanadev.com
-  HOSTED_ZONE_ID: Z05813481E1GHZSOTI0HO
+  HOSTED_ZONE_ID: Z04686813NI6YSP69VAR2
 
 jobs:
   deploy-infra:

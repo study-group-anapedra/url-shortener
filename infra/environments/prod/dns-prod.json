@@ -2,5 +2,5 @@
   { "ParameterKey": "ProjectName", "ParameterValue": "url-shortener" },
   { "ParameterKey": "Environment", "ParameterValue": "prod" },
   { "ParameterKey": "DomainName", "ParameterValue": "api.asantanadev.com" },
-  { "ParameterKey": "HostedZoneId", "ParameterValue": "Z05813481E1GHZSOTI0HO" }
+  { "ParameterKey": "HostedZoneId", "ParameterValue": "Z04686813NI6YSP69VAR2" }
 ]
