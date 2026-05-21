@@ -1,4 +1,4 @@
-const API_URL = "https://api.asantanadev.com/prod/url";
+const API_URL = "https://api.asantanadev.com/url";
 export async function encurtarUrl(originalUrl) {
   const response = await fetch(API_URL, {
     method: "POST",
