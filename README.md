@@ -79,12 +79,18 @@ Essa abordagem garante:
 
 
 <p>
+  <a href="https://drive.google.com/file/d/1g7Lf9ZcvVdJX5u19SBiknVz2wePssQh7/view?usp=sharing">
+    🔗 👉 Demonstração da aplicação funcionando com frontend integrado ao backend serverless na AWS
+  </a>
+</p>
+
+---
+<p>
   <a href="https://drive.google.com/file/d/1Pt6VqGNVci708Nh5GZ5fYzYTuDFeN9ee/view?usp=sharing">
     🔗 👉 Deploy Automatizado via GitHub Actions
   </a>
 </p>
 ---
-
 ## 🧩 Diagramas
 
 <p>
@@ -138,7 +144,6 @@ Essa abordagem garante:
     🔗 👉 Cenários de Teste
   </a>
 </p>
-
 ---
 
 ## 🧱 Stack Tecnológica
