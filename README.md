@@ -52,6 +52,13 @@ Essa abordagem garante:
 
 ## 🎥 Registro do Funcionamento do Sistema (Vídeos)
 
+
+<p>
+  <a href="https://drive.google.com/file/d/1xMTExxYKu2wCGaro_bMu8qzPp4WBJE3A/view?usp=sharing">
+    🔗 👉 frontend integrado ao backend serverless na AWS, utilizando domínio customizado e HTTPS.
+  </a>
+</p>
+
 <p>
   <a href="https://drive.google.com/file/d/12lprGpRL-GOiL7pYasXtCUK0dCuDps6-/view?usp=sharing">
     🔗 👉 Testes no Postman
