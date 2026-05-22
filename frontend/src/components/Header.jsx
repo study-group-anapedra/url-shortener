@@ -2,7 +2,7 @@ export default function Header() {
   return (
     <header className="header">
       <div className="container header-content">
-        <h2 className="logo">short</h2>
+        <h2 className="logo">short | URL</h2>
 
         <nav className="nav">
           <a href="#">Features</a>
